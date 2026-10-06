@@ -5,6 +5,7 @@ import CalendarView from './components/CalendarView'
 import ChatView from './components/ChatView'
 import EventSheet from './components/EventSheet'
 import QuickAddSheet from './components/QuickAddSheet'
+import TodoSheet from './components/TodoSheet'
 import SettingsView from './components/SettingsView'
 import ApiKeyGate from './components/ApiKeyGate'
 import Avatar from './components/Avatar'
@@ -72,9 +73,22 @@ export default function App() {
   }
   const [newEvent, setNewEvent] = useState(emptyEvent)
 
+  const [todos, setTodos] = useState([])
+  const emptyTodo = { title: '', notes: '', dueDate: '', dueTime: '', reminder_minutes: null }
+  const [todoDraft, setTodoDraft] = useState(emptyTodo)
+  const [editingTodoId, setEditingTodoId] = useState(null)
+  const [isTodoSheetOpen, setIsTodoSheetOpen] = useState(false)
+  const [isSubmittingTodo, setIsSubmittingTodo] = useState(false)
+
   const fetchEvents = async (userId) => {
     const { data, error } = await supabase.from('events').select('*').eq('user_id', userId).order('start_time', { ascending: true })
     if (!error) setEvents(data)
+  }
+
+  const fetchTodos = async (userId) => {
+    const { data, error } = await supabase.from('todos').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    if (error) console.error('Errore caricamento to-do:', error)
+    else setTodos(data)
   }
 
   const fetchUserSettings = async (userId) => {
@@ -91,12 +105,12 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      if (session) { fetchEvents(session.user.id); fetchUserSettings(session.user.id) }
+      if (session) { fetchEvents(session.user.id); fetchTodos(session.user.id); fetchUserSettings(session.user.id) }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) {
-        fetchEvents(session.user.id); fetchUserSettings(session.user.id)
+        fetchEvents(session.user.id); fetchTodos(session.user.id); fetchUserSettings(session.user.id)
       } else {
         setSettingsLoaded(false)
         setUserSettings({ gemini_api_key: '', theme: 'dark', avatar_url: null })
@@ -497,6 +511,62 @@ REGOLE OPERATIVE ASSOLUTE:
     setIsAddModalOpen(true)
   }
 
+  // --- TO-DO ---
+  const handleQuickAddTodo = async (title) => {
+    const { data, error } = await supabase.from('todos').insert({ user_id: session.user.id, title }).select().single()
+    if (error) { showToast('Errore salvataggio to-do: ' + error.message); return }
+    setTodos((prev) => [data, ...prev])
+  }
+
+  // Aggiornamento ottimistico: la spunta risponde subito, si ripristina se il salvataggio fallisce.
+  const handleToggleTodo = async (todo) => {
+    const done = !todo.done
+    const patch = { done, done_at: done ? new Date().toISOString() : null }
+    setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, ...patch } : t)))
+    const { error } = await supabase.from('todos').update(patch).eq('id', todo.id)
+    if (error) {
+      setTodos((prev) => prev.map((t) => (t.id === todo.id ? todo : t)))
+      showToast('Errore aggiornamento to-do: ' + error.message)
+    }
+  }
+
+  const openTodoSheet = (title = '') => { setTodoDraft({ ...emptyTodo, title }); setEditingTodoId(null); setIsTodoSheetOpen(true) }
+  const openEditTodo = (todo) => {
+    const due = todo.due_at ? new Date(todo.due_at) : null
+    setTodoDraft({
+      title: todo.title, notes: todo.notes || '',
+      dueDate: due ? toDateInputValue(due) : '', dueTime: due ? due.toTimeString().slice(0, 5) : '',
+      reminder_minutes: todo.reminder_minutes ?? null,
+    })
+    setEditingTodoId(todo.id); setIsTodoSheetOpen(true)
+  }
+  const closeTodoSheet = () => { setIsTodoSheetOpen(false); setEditingTodoId(null); setTodoDraft(emptyTodo) }
+
+  const handleSaveTodo = async (e) => {
+    e.preventDefault()
+    setIsSubmittingTodo(true)
+    const due_at = todoDraft.dueDate ? new Date(`${todoDraft.dueDate}T${todoDraft.dueTime || '09:00'}:00`).toISOString() : null
+    const payload = {
+      title: todoDraft.title.trim(), notes: todoDraft.notes,
+      due_at, reminder_minutes: due_at ? todoDraft.reminder_minutes : null, reminder_sent_at: null,
+    }
+    const { error } = editingTodoId
+      ? await supabase.from('todos').update(payload).eq('id', editingTodoId)
+      : await supabase.from('todos').insert({ ...payload, user_id: session.user.id })
+    setIsSubmittingTodo(false)
+    if (error) { showToast('Errore salvataggio to-do: ' + error.message); return }
+    if (payload.reminder_minutes != null && !pushSubscribed) showToast('Salvato. Attiva le notifiche nelle Impostazioni per ricevere il promemoria.')
+    closeTodoSheet(); fetchTodos(session.user.id)
+  }
+
+  const handleDeleteTodo = async (id) => {
+    if (!window.confirm('Eliminare questo to-do?')) return
+    const { error } = await supabase.from('todos').delete().eq('id', id)
+    if (error) { showToast('Errore eliminazione to-do: ' + error.message); return }
+    setTodos((prev) => prev.filter((t) => t.id !== id))
+    if (id === editingTodoId) closeTodoSheet()
+  }
+
   if (!session) return <Auth />
   if (!settingsLoaded) return null
   if (!userSettings.gemini_api_key) return <ApiKeyGate onSave={handleSaveApiKey} onLogout={handleLogout} />
@@ -542,6 +612,11 @@ REGOLE OPERATIVE ASSOLUTE:
             onDelete={handleDeleteEvent}
             onImportFile={handleImportFile}
             onCreateAtTime={openAddModalAt}
+            todos={todos}
+            onTodoQuickAdd={handleQuickAddTodo}
+            onTodoToggle={handleToggleTodo}
+            onTodoEdit={openEditTodo}
+            onTodoOpenForm={openTodoSheet}
           />
         )}
 
@@ -613,6 +688,17 @@ REGOLE OPERATIVE ASSOLUTE:
         onSubmit={handleSaveEvent}
         onClose={closeModal}
         onDelete={handleDeleteEvent}
+      />
+
+      <TodoSheet
+        isOpen={isTodoSheetOpen}
+        editingId={editingTodoId}
+        draft={todoDraft}
+        setDraft={setTodoDraft}
+        isSubmitting={isSubmittingTodo}
+        onSubmit={handleSaveTodo}
+        onClose={closeTodoSheet}
+        onDelete={handleDeleteTodo}
       />
 
       {toast && (

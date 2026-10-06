@@ -4,6 +4,7 @@ import { getColorHex, getCategory, getEnergyLevel, getEnergyRemaining } from '..
 import MonthGridView from './MonthGridView'
 import YearView from './YearView'
 import MonthView from './MonthView'
+import TodoView from './TodoView'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i) // 0:00 -> 23:00
 const MOBILE_HOUR_H = 64
@@ -81,7 +82,7 @@ function startOfWeekFor(baseDate, weekOffset) {
   return d
 }
 
-export default function CalendarView({ events, weekOffset, setWeekOffset, onEdit, onDelete, onImportFile, onCreateAtTime }) {
+export default function CalendarView({ events, weekOffset, setWeekOffset, onEdit, onDelete, onImportFile, onCreateAtTime, todos, onTodoQuickAdd, onTodoToggle, onTodoEdit, onTodoOpenForm }) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -97,7 +98,7 @@ export default function CalendarView({ events, weekOffset, setWeekOffset, onEdit
     return idx === -1 ? 0 : idx
   })
 
-  const [viewMode, setViewMode] = useState('week') // 'week' | 'month' | 'year' | 'energy'
+  const [viewMode, setViewMode] = useState('week') // 'week' | 'month' | 'year' | 'todo' | 'energy'
   const [monthOffset, setMonthOffset] = useState(0)
   const [yearOffset, setYearOffset] = useState(0)
   const monthCursor = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1)
@@ -123,6 +124,9 @@ export default function CalendarView({ events, weekOffset, setWeekOffset, onEdit
     setViewMode('month')
   }
 
+  const pendingTodoCount = todos.filter((t) => !t.done).length
+  const overdueTodoCount = todos.filter((t) => !t.done && t.due_at && new Date(t.due_at) < new Date()).length
+
   const TabButton = ({ mode, children }) => (
     <button
       onClick={() => setViewMode(mode)}
@@ -138,6 +142,14 @@ export default function CalendarView({ events, weekOffset, setWeekOffset, onEdit
       <TabButton mode="week">Settimana</TabButton>
       <TabButton mode="month">Mese</TabButton>
       <TabButton mode="year">Anno</TabButton>
+      <TabButton mode="todo">
+        To-do
+        {pendingTodoCount > 0 && (
+          <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${overdueTodoCount > 0 ? 'bg-rose-500/20 text-rose-400' : 'bg-[var(--k-surface-2)] text-[var(--k-text-3)]'}`}>
+            {pendingTodoCount}
+          </span>
+        )}
+      </TabButton>
     </div>
   )
 
@@ -290,6 +302,23 @@ export default function CalendarView({ events, weekOffset, setWeekOffset, onEdit
     const file = e.target.files?.[0]
     if (file) onImportFile(file)
     e.target.value = ''
+  }
+
+  if (viewMode === 'todo') {
+    return (
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="px-4 lg:px-6 pt-3 shrink-0">
+          <ViewToggle />
+        </div>
+        <TodoView
+          todos={todos}
+          onQuickAdd={onTodoQuickAdd}
+          onToggle={onTodoToggle}
+          onEdit={onTodoEdit}
+          onOpenFullForm={onTodoOpenForm}
+        />
+      </div>
+    )
   }
 
   if (viewMode === 'energy') {
