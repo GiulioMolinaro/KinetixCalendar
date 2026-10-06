@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* Kinetix — identità "Impulso": zone energia di uno sportwatch applicate
+   alla giornata, fondo aubergine invece del solito nero, tipografia
+   scultorea per i numeri che contano. */
+
+@theme {
+  --font-sans: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Unbounded", "Hanken Grotesk", -apple-system, sans-serif;
+
+  /* L'accento principale dell'app (bottoni, selezioni, focus) non è più il
+     classico indigo da template: è un viola elettrico, coerente con lo sfondo
+     aubergine e distinto dai colori-zona dell'energia. */
+  --color-indigo-50: #f6effe;
+  --color-indigo-100: #ecdcfd;
+  --color-indigo-200: #dab8fb;
+  --color-indigo-300: #c48cff;
+  --color-indigo-400: #b266ff;
+  --color-indigo-500: #9a45f2;
+  --color-indigo-600: #8730e0;
+  --color-indigo-700: #7024bd;
+  --color-indigo-800: #591c96;
+  --color-indigo-900: #46177a;
+
+  /* Zone energia — leggera / moderata / intensa (le stesse tre soglie già
+     usate dall'app, ricolorate come le zone di frequenza di uno sportwatch). */
+  --color-emerald-400: #4ade80;
+  --color-emerald-500: #34c266;
+  --color-amber-400: #f5b942;
+  --color-amber-500: #e2a22b;
+  --color-rose-400: #ff8a7a;
+  --color-rose-500: #ff6b5b;
+
+  /* 'purple' e 'zinc' sono usati solo come due dei sei colori-evento a
+     disposizione: li spostiamo dal viola/grigio generico verso un magenta e
+     un mauve caldo, coerenti col mondo aubergine invece che scollegati da esso. */
+  --color-purple-400: #ee8ce8;
+  --color-purple-500: #e14bd4;
+  --color-zinc-400: #a897ae;
+  --color-zinc-500: #8a7391;
+}
+
+:root {
+  --k-scheme: dark;
+  --k-ink: #1b0f1f;
+  --k-surface: #241530;
+  --k-surface-2: #2f1c3d;
+  --k-surface-3: #3d2545;
+  --k-line: #3d2545;
+  --k-text: #f5eef7;
+  --k-text-2: #d9c8e0;
+  --k-text-3: #b29dbd;
+  --k-text-4: #8a7391;
+  --k-text-5: #6b5871;
+  --k-event-indigo-text: #d9b3ff;
+  --k-event-emerald-text: #a7f3c8;
+  --k-event-amber-text: #fbdf9e;
+  --k-event-rose-text: #ffc2b8;
+  --k-event-purple-text: #f6c2f0;
+  --k-event-zinc-text: #cdbcd2;
+}
+
+:root[data-theme="light"] {
+  --k-scheme: light;
+  --k-ink: #fbf7fc;
+  --k-surface: #ffffff;
+  --k-surface-2: #f3eaf7;
+  --k-surface-3: #e6d7ed;
+  --k-line: #e6d7ed;
+  --k-text: #241530;
+  --k-text-2: #4a2f57;
+  --k-text-3: #715c7b;
+  --k-text-4: #97879d;
+  --k-text-5: #b7acbc;
+  --k-event-indigo-text: #7024bd;
+  --k-event-emerald-text: #0f7a44;
+  --k-event-amber-text: #9a6a10;
+  --k-event-rose-text: #c2402e;
+  --k-event-purple-text: #a52a9a;
+  --k-event-zinc-text: #5c4a63;
+}
+
+html, body, #root {
+  height: 100%;
+  overscroll-behavior-y: none;
+  background-color: var(--k-ink);
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* Scroll il più fluido possibile ovunque: momentum nativo su iOS (i contenitori
+   con overflow diventano "smooth" senza dover attaccare la proprietà a mano su
+   ogni componente) e niente rimbalzo che si propaga alla pagina intera. */
+*{
+  -webkit-overflow-scrolling: touch;
+}
+.overflow-y-auto, .overflow-auto {
+  overscroll-behavior: contain;
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-backdrop-in { animation: backdrop-in 0.18s ease-out; }
+.animate-sheet-up { animation: sheet-up 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+.animate-modal-in { animation: modal-in 0.18s ease-out; }

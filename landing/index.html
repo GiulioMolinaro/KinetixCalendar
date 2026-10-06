@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kinetix</title>
+<meta name="description" content="The calendar with an AI assistant that balances your week around your energy, not just your free hours." />
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
+<meta name="theme-color" content="#09090b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,500;1,6..72,600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #09090b;
+    --surface: #18181b;
+    --surface-2: #27272a;
+    --line: #3f3f46;
+    --text: #f4f4f5;
+    --text-dim: #a1a1aa;
+    --accent: #818cf8;
+    --accent-solid: #4f46e5;
+    --accent-solid-hover: #6366f1;
+    --accent-ink: #ffffff;
+    --calm: #34d399;
+    --warn: #fbbf24;
+    --hot: #fb7185;
+    --focus: #818cf8;
+    --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+    --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink: #fafafa;
+      --surface: #ffffff;
+      --surface-2: #f4f4f5;
+      --line: #e4e4e7;
+      --text: #18181b;
+      --text-dim: #71717a;
+      --accent: #4f46e5;
+      --accent-solid: #4f46e5;
+      --accent-solid-hover: #4338ca;
+      --accent-ink: #ffffff;
+      --calm: #059669;
+      --warn: #b45309;
+      --hot: #e11d48;
+      --focus: #4f46e5;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --ink: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --line: #e4e4e7;
+    --text: #18181b;
+    --text-dim: #71717a;
+    --accent: #4f46e5;
+    --accent-solid: #4f46e5;
+    --accent-solid-hover: #4338ca;
+    --accent-ink: #ffffff;
+    --calm: #059669;
+    --warn: #b45309;
+    --hot: #e11d48;
+    --focus: #4f46e5;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  img, svg { max-width: 100%; display: block; }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 5vw, 48px);
+  }
+
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  em { font-style: italic; color: var(--accent); }
+
+  p { margin: 0; }
+  .prose { max-width: 62ch; }
+
+  /* ---------- header ---------- */
+  header.site {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--ink);
+    border-bottom: 1px solid var(--line);
+  }
+  .site-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 16px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+  .logo-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .site-bar .cta-link {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-decoration: none;
+    border: 1px solid var(--line);
+    padding: 8px 16px;
+    border-radius: 100px;
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .site-bar .cta-link:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    padding-block: clamp(56px, 10vw, 108px) clamp(48px, 8vw, 84px);
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: clamp(32px, 6vw, 64px);
+    align-items: center;
+  }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    line-height: 1.08;
+    margin-block: 18px 22px;
+  }
+  .hero .subhead {
+    color: var(--text-dim);
+    font-size: 1.08rem;
+    max-width: 46ch;
+    margin-bottom: 32px;
+  }
+
+  .waitlist-form {
+    display: flex;
+    gap: 10px;
+    max-width: 460px;
+    flex-wrap: wrap;
+  }
+  .waitlist-form input[type="email"] {
+    flex: 1 1 220px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    min-width: 0;
+  }
+  .waitlist-form input[type="email"]::placeholder { color: var(--text-dim); }
+  .waitlist-form button {
+    background: var(--accent-solid);
+    color: var(--accent-ink);
+    border: none;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 14px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.12s ease, filter 0.15s ease;
+  }
+  .waitlist-form button:hover { filter: brightness(1.08); }
+  .waitlist-form button:active { transform: scale(0.98); }
+  .hidden-field { position: absolute; left: -9999px; }
+  .form-note {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 12px;
+  }
+  .form-status { font-family: var(--font-mono); font-size: 13px; margin-top: 12px; min-height: 1.2em; }
+  .form-status[data-state="ok"] { color: var(--calm); }
+  .form-status[data-state="err"] { color: var(--hot); }
+
+  /* ---------- pulse graphic ---------- */
+  .pulse-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 26px 24px 20px;
+  }
+  .pulse-card .eyebrow { display: block; margin-bottom: 14px; }
+  .pulse-days {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    letter-spacing: 0.04em;
+  }
+  .pulse-legend {
+    display: flex;
+    gap: 18px;
+    margin-top: 18px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .pulse-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.calm { background: var(--calm); }
+  .dot.warn { background: var(--warn); }
+  .dot.hot { background: var(--hot); }
+
+  #pulse-path {
+    stroke-dasharray: 900;
+    stroke-dashoffset: 900;
+    animation: draw 2.4s ease-out forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #pulse-path { animation: none; stroke-dashoffset: 0; }
+  }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  /* ---------- sections ---------- */
+  section { padding-block: clamp(56px, 9vw, 96px); }
+  .rule-top { border-top: 1px solid var(--line); }
+
+  .problem {
+    text-align: left;
+  }
+  .problem blockquote {
+    margin: 0 0 24px;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+    line-height: 1.3;
+    font-style: italic;
+    max-width: 26ch;
+  }
+  .problem .prose { color: var(--text-dim); font-size: 1.05rem; }
+
+  .features { display: grid; gap: 0; }
+  .feature-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+    padding-block: 34px;
+    border-top: 1px solid var(--line);
+  }
+  .feature-row:last-child { border-bottom: 1px solid var(--line); }
+  @media (max-width: 720px) { .feature-row { grid-template-columns: 1fr; gap: 10px; } }
+  .feature-row h3 {
+    font-size: 1.3rem;
+    font-weight: 500;
+  }
+  .feature-row .prose { color: var(--text-dim); }
+  .feature-num {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 13px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  /* ---------- mockup chat ---------- */
+  .proof {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(32px, 6vw, 72px);
+    align-items: center;
+  }
+  @media (max-width: 860px) { .proof { grid-template-columns: 1fr; } }
+  .proof h2 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); margin-bottom: 18px; line-height: 1.2; }
+  .proof .prose { color: var(--text-dim); }
+
+  .chat-mock {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .bubble {
+    max-width: 88%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .bubble.user {
+    align-self: flex-end;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-bottom-right-radius: 3px;
+  }
+  .bubble.ai {
+    align-self: flex-start;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+    border-bottom-left-radius: 3px;
+  }
+  .bubble .opt { font-family: var(--font-mono); font-size: 12.5px; display: block; margin-top: 6px; color: var(--text-dim); }
+  .bubble .opt b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* ---------- energy ring ---------- */
+  .ring-mock {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: clamp(24px, 4vw, 36px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .ring-big-wrap { position: relative; width: 168px; height: 168px; }
+  .ring-big-wrap svg { transform: rotate(-90deg); }
+  .ring-big-value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring-big-value strong { font-family: var(--font-mono); font-size: 2.1rem; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1; }
+  .ring-big-value span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-top: 6px; }
+  .ring-caption { font-size: 14px; color: var(--calm); font-weight: 600; }
+
+  .mini-rings { display: flex; gap: 10px; }
+  .mini-ring { position: relative; width: 34px; height: 34px; }
+  .mini-ring svg { transform: rotate(-90deg); }
+  .mini-ring span {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+  }
+
+  /* ---------- final cta ---------- */
+  .final-cta {
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: clamp(32px, 6vw, 56px);
+  }
+  .final-cta h2 {
+    font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+    line-height: 1.15;
+    max-width: 20ch;
+    margin-bottom: 28px;
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-block: 28px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap site-bar">
+    <a class="logo" href="#top">
+      <svg class="logo-mark" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2 14h4l2.5-7 4 14L15 9l2 5h5" />
+      </svg>
+      KINETIX
+    </a>
+    <a class="cta-link" href="#waitlist">Waitlist</a>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <span class="eyebrow">Kinetix · coming soon</span>
+      <h1>Your calendar knows how long something takes.<br>Not what it <em>costs you</em>.</h1>
+      <p class="subhead">Kinetix is the calendar with an AI assistant that looks at your energy, not just your empty slots. It balances your week, suggests the right time for flexible plans, and reminds you before you forget.</p>
+
+      <form class="waitlist-form" method="POST" action="https://formspree.io/f/xjyvyvez" id="waitlist-form">
+        <p class="hidden-field"><label>Leave this empty: <input name="_gotcha" /></label></p>
+        <input type="email" name="email" required placeholder="you@email.com" aria-label="Your email" />
+        <button type="submit">Join the waitlist</button>
+      </form>
+      <p class="form-status" id="form-status" role="status"></p>
+      <p class="form-note">Zero spam. One email, when we open access.</p>
+    </div>
+
+    <div class="pulse-card" aria-hidden="true">
+      <span class="eyebrow">Energy load · this week</span>
+      <svg viewBox="0 0 340 110" width="100%" height="110">
+        <line x1="0" y1="80" x2="340" y2="80" stroke="var(--line)" stroke-width="1"/>
+        <path id="pulse-path" d="M10,70 C35,72 45,50 60,44 C80,36 95,20 110,18 C130,16 140,55 155,60 C175,66 190,68 205,64 C225,58 235,30 250,26 C270,20 285,42 300,50 C312,55 322,58 330,58"
+              fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" />
+        <circle cx="60" cy="44" r="4" fill="var(--calm)" />
+        <circle cx="110" cy="18" r="4" fill="var(--hot)" />
+        <circle cx="205" cy="64" r="4" fill="var(--warn)" />
+        <circle cx="250" cy="26" r="4" fill="var(--hot)" />
+        <circle cx="300" cy="50" r="4" fill="var(--calm)" />
+      </svg>
+      <div class="pulse-days">
+        <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+      </div>
+      <div class="pulse-legend">
+        <span><i class="dot calm"></i>light</span>
+        <span><i class="dot warn"></i>moderate</span>
+        <span><i class="dot hot"></i>heavy</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="problem rule-top">
+    <div class="wrap">
+      <blockquote>An hour of meetings and an hour at the gym take up the same space on your calendar. They don't leave you with the same energy.</blockquote>
+      <p class="prose">Regular calendars treat every hour the same: free or busy. Kinetix doesn't — every commitment has a cost, and your week gets organized around that, not just the empty slots.</p>
+    </div>
+  </section>
+
+  <section class="rule-top">
+    <div class="wrap">
+      <div class="features">
+        <div class="feature-row">
+          <div><span class="feature-num">01</span><h3>Talk, don't tap</h3></div>
+          <p class="prose">Add, move, or delete plans by typing like you would to a real assistant. "Move the gym to Thursday morning" is all it takes.</p>
+        </div>
+        <div class="feature-row">
+          <div><span class="feature-num">02</span><h3>Balances your energy</h3></div>
+          <p class="prose">For flexible plans, Kinetix looks at your week's load and suggests 2-3 better time slots — not the first free gap, the right one.</p>
+        </div>
+        <div class="feature-row">
+          <div><span class="feature-num">03</span><h3>Actually reminds you</h3></div>
+          <p class="prose">Real push notifications, even with the app closed. Choose how far ahead to be reminded, event by event.</p>
+        </div>
+        <div class="feature-row">
+          <div><span class="feature-num">04</span><h3>Bring your own schedule</h3></div>
+          <p class="prose">Import your school, work, or gym schedule in one go — no manual entry, line by line.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="proof rule-top">
+    <div class="wrap" style="display:grid; grid-template-columns: 1fr 1fr; gap: inherit; align-items:center;">
+      <div class="ring-mock" aria-hidden="true">
+        <div class="ring-big-wrap">
+          <svg viewBox="0 0 168 168" width="168" height="168">
+            <circle cx="84" cy="84" r="78" fill="none" stroke="var(--line)" stroke-width="12" />
+            <circle cx="84" cy="84" r="78" fill="none" stroke="var(--calm)" stroke-width="12" stroke-linecap="round" stroke-dasharray="490.09" stroke-dashoffset="137.2" />
+          </svg>
+          <div class="ring-big-value"><strong>72%</strong><span>energy today</span></div>
+        </div>
+        <div class="ring-caption">Light day</div>
+        <div class="mini-rings">
+          <!-- MON 88 -->
+          <div class="mini-ring"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="17" cy="17" r="15" fill="none" stroke="var(--calm)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="11.3"/></svg><span>M</span></div>
+          <!-- TUE 74 -->
+          <div class="mini-ring"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="17" cy="17" r="15" fill="none" stroke="var(--calm)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="24.5"/></svg><span>T</span></div>
+          <!-- WED 60 -->
+          <div class="mini-ring"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="17" cy="17" r="15" fill="none" stroke="var(--warn)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="37.7"/></svg><span>W</span></div>
+          <!-- THU 45 -->
+          <div class="mini-ring"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="17" cy="17" r="15" fill="none" stroke="var(--warn)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="51.8"/></svg><span>T</span></div>
+          <!-- FRI 28 -->
+          <div class="mini-ring"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="17" cy="17" r="15" fill="none" stroke="var(--hot)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="67.9"/></svg><span>F</span></div>
+          <!-- SAT 95 -->
+          <div class="mini-ring"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="17" cy="17" r="15" fill="none" stroke="var(--calm)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="4.7"/></svg><span>S</span></div>
+          <!-- SUN 70 -->
+          <div class="mini-ring"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="17" cy="17" r="15" fill="none" stroke="var(--calm)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="28.3"/></svg><span>S</span></div>
+        </div>
+      </div>
+      <div>
+        <h2>Not just a calendar.<br>An energy tracker.</h2>
+        <p class="prose">Every day becomes a ring: green when you're light, yellow when you're pushing, red when you've overdone it. A glance at your week, like the recovery score on a fitness tracker — but calculated from your actual commitments.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="proof rule-top">
+    <div class="wrap" style="display:grid; grid-template-columns: 1fr 1fr; gap: inherit; align-items:center;">
+      <div>
+        <h2>It doesn't give you the first free slot.<br>It gives you the right one.</h2>
+        <p class="prose">When you add something without a set time, the AI looks at your week and suggests the best options — you pick, it books.</p>
+      </div>
+      <div class="chat-mock">
+        <div class="bubble user">I need to study for 2 hours this week, find me the best time</div>
+        <div class="bubble ai">
+          Saturday you only have a light session in the morning. Here are 3 options:
+          <span class="opt">1 · Sat <b>2:00–4:00 PM</b> (free afternoon)</span>
+          <span class="opt">2 · Sat <b>4:30–6:30 PM</b> (after a break)</span>
+          <span class="opt">3 · Sun <b>2:00–4:00 PM</b> (light day)</span>
+        </div>
+        <div class="bubble user">Second one works</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rule-top" id="waitlist">
+    <div class="wrap">
+      <div class="final-cta">
+        <span class="eyebrow">Coming soon</span>
+        <h2>The calendar that thinks of you before you even ask.</h2>
+        <form class="waitlist-form" method="POST" action="https://formspree.io/f/xjyvyvez" id="waitlist-form-2">
+          <p class="hidden-field"><label>Leave this empty: <input name="_gotcha" /></label></p>
+          <input type="email" name="email" required placeholder="you@email.com" aria-label="Your email" />
+          <button type="submit">Join the waitlist</button>
+        </form>
+        <p class="form-status" id="form-status-2" role="status"></p>
+        <p class="form-note">Zero spam. One email, when we open access.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap" style="display:flex; justify-content:space-between; width:100%; flex-wrap:wrap; gap:10px;">
+    <span>KINETIX — © 2026</span>
+    <span>made for people with more commitments than energy</span>
+  </div>
+</footer>
+
+<script>
+  function wireForm(formId, statusId) {
+    var form = document.getElementById(formId);
+    var status = document.getElementById(statusId);
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = new FormData(form);
+      fetch(form.action, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: data,
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('bad-status');
+          status.dataset.state = 'ok';
+          status.textContent = "You're on the list. Thanks!";
+          form.reset();
+        })
+        .catch(function () {
+          status.dataset.state = 'err';
+          status.textContent = 'Something went wrong, try again shortly.';
+        });
+    });
+  }
+  wireForm('waitlist-form', 'form-status');
+  wireForm('waitlist-form-2', 'form-status-2');
+</script>
+
+</body>
+</html>

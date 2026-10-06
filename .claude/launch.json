@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kinetix-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--host"],
+      "port": 5173
+    },
+    {
+      "name": "landing-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "landing", "-l", "4173"],
+      "port": 4173
+    }
+  ]
+}
